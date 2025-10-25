@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: crypto_deposits
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/crypto_deposits
+      - ALCHEMY_API_KEY=${ALCHEMY_API_KEY}
+      - ALCHEMY_WS_URL=${ALCHEMY_WS_URL}
+      - ALCHEMY_HTTP_URL=${ALCHEMY_HTTP_URL}
+      - CHAIN_ID=11155111
+      - CONFIRMATIONS_REQUIRED=12
+      - SECRET_KEY=dev_secret_key_change_in_production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  monitor:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/crypto_deposits
+      - ALCHEMY_API_KEY=${ALCHEMY_API_KEY}
+      - ALCHEMY_WS_URL=${ALCHEMY_WS_URL}
+      - ALCHEMY_HTTP_URL=${ALCHEMY_HTTP_URL}
+      - CHAIN_ID=11155111
+      - CONFIRMATIONS_REQUIRED=12
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: python run_monitor.py
+
+volumes:
+  postgres_data:
