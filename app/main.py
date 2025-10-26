@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api import users, wallets, deposits, websocket
+from app.api import users, wallets, deposits, websocket, blockchain_networks
 
 # Create FastAPI application
 app = FastAPI(
@@ -26,6 +26,7 @@ app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(wallets.router, prefix="/wallets", tags=["wallets"])
 app.include_router(deposits.router, prefix="/deposits", tags=["deposits"])
 app.include_router(websocket.router, prefix="/ws", tags=["websocket"])
+app.include_router(blockchain_networks.router, prefix="/blockchain-networks", tags=["blockchain-networks"])
 
 
 @app.get("/")

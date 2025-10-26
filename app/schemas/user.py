@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -9,10 +9,18 @@ if TYPE_CHECKING:
 
 class UserBase(BaseModel):
     email: EmailStr
+    first_name: str
+    last_name: str
 
 
 class UserCreate(UserBase):
     pass
+
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
 class UserResponse(UserBase):
@@ -33,4 +41,5 @@ class UserWithWallets(UserResponse):
 
 # Import WalletResponse after the class definitions to avoid circular imports
 from .wallet import WalletResponse
+
 UserWithWallets.model_rebuild()

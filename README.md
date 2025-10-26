@@ -82,9 +82,10 @@ A real-time cryptocurrency deposit monitoring system built with FastAPI, WebSock
 ## API Endpoints
 
 ### Users
-- `POST /users/` - Create a new user
+- `POST /users/` - Create a new user (requires email, first_name, last_name)
 - `GET /users/{user_id}` - Get user by ID
 - `GET /users/by-email/{email}` - Get user by email
+- `PUT /users/{user_id}` - Update an existing user (email, first_name, last_name are all optional)
 
 ### Wallets
 - `POST /wallets/` - Add a wallet to a user
@@ -123,7 +124,7 @@ Event types:
 
 ## Testing the System
 
-1. Create a user and add a wallet address
+1. Create a user with first name, last name, and email, then add a wallet address
 2. Get some Sepolia test ETH from a faucet (e.g., [sepoliafaucet.com](https://sepoliafaucet.com))
 3. Send ETH to your monitored wallet address
 4. Connect to the WebSocket endpoint to see real-time updates
@@ -147,6 +148,30 @@ The system uses PostgreSQL with the following main tables:
 - In production, implement JWT authentication
 - Wallet addresses are validated for proper format
 - All amounts use precise decimal arithmetic
+
+## User Management
+
+### Creating a User
+```json
+POST /users/
+{
+  "email": "user@example.com",
+  "first_name": "John",
+  "last_name": "Doe"
+}
+```
+
+### Updating a User
+```json
+PUT /users/{user_id}
+{
+  "email": "newemail@example.com",
+  "first_name": "Jane",
+  "last_name": "Smith"
+}
+```
+
+All fields in the update request are optional. You can update just the email, just the name fields, or all of them.
 
 ## Architecture Decisions
 
