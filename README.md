@@ -1,202 +1,172 @@
-# Crypto Deposit Monitor
+# Real-Time Crypto Deposit System
 
-A real-time cryptocurrency deposit monitoring system built with FastAPI, WebSockets, PostgreSQL, and Alchemy API.
+A backend system that monitors Ethereum blockchain transactions and provides real-time deposit status updates via WebSocket.
 
-## Features
+## Overview
 
-- Real-time blockchain transaction monitoring
-- WebSocket-based live status updates
-- Multi-wallet support per user
-- Blockchain reorganization detection
-- Configurable confirmation requirements per network
-- Docker containerization for easy deployment
+This system detects incoming transactions to registered wallet addresses, records them in a database, and provides live status updates as confirmations accumulate. Built with Python, FastAPI, PostgreSQL, and Alchemy WebSocket API.
+
+## Core Requirements Met
+
+✅ **Deposit Monitoring Service** - Background service continuously monitors blockchain activity, detects transactions, records deposit data, and updates confirmations
+
+✅ **Real-Time Status Updates** - Live updates show deposits detected (Pending), confirmation counts increasing, and completion status
+
+✅ **WebSocket Integration** - Secure WebSocket endpoint handles multiple concurrent connections and broadcasts real-time events
+
+## Quick Start
+
+### Option 1: Docker Compose (Recommended)
+
+```bash
+# 1. Get an Alchemy API key from https://alchemy.com
+# 2. Setup environment
+cp .env.example .env
+# Edit .env and add your ALCHEMY_API_KEY
+# 3. Start everything
+docker-compose up --build
+# 4. Access at http://localhost:8000/docs (Swagger UI)
+```
+
+### Option 2: Local Development
+
+```bash
+# Setup
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Database
+docker run --name postgres-crypto \
+  -e POSTGRES_DB=crypto_deposits -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres:17
+
+# Configure
+cp .env.example .env
+# Add your Alchemy API key
+
+# Migrate
+alembic upgrade head
+
+# Run (in separate terminals)
+uvicorn app.main:app --reload    # Terminal 1
+python run_monitor.py           # Terminal 2
+```
 
 ## Architecture
 
-- **FastAPI REST API** - User management and deposit queries
-- **WebSocket Server** - Real-time deposit status updates
-- **Blockchain Monitor Service** - Background worker monitoring Ethereum Sepolia
-- **PostgreSQL Database** - Persistent storage with SQLAlchemy ORM
-- **Alchemy Integration** - Blockchain connectivity via WebSocket and HTTP
+**API Server** - FastAPI application with REST endpoints and WebSocket handling
+**Blockchain Monitor** - Background service subscribing to Ethereum via Alchemy WebSocket
+**PostgreSQL** - Database for persistence
+**Communication** - Monitor uses HTTP POST to notify API, which broadcasts to WebSocket clients
 
-## Prerequisites
+The processes run separately for independent scaling.
 
-- Python 3.11+
-- Docker and Docker Compose
-- Alchemy API key (get one at [alchemy.com](https://alchemy.com))
+## Accessing the API
 
-## Quick Start with Docker
+### Swagger UI (Interactive Documentation)
 
-1. Clone the repository and navigate to the project directory
-2. Copy `.env.example` to `.env` and fill in your Alchemy API key:
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your ALCHEMY_API_KEY
-   ```
-3. Start the services:
-   ```bash
-   docker-compose up --build
-   ```
-4. The API will be available at `http://localhost:8000`
-5. API documentation at `http://localhost:8000/docs`
+**URL:** http://localhost:8000/docs
 
-## Local Development Setup
+![API Documentation](imgs/docs.png)
 
-1. Create a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+Interactive API documentation with request/response schemas and the ability to test endpoints directly in the browser.
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### ReDoc (Alternative Format)
 
-3. Set up PostgreSQL database (using Docker):
-   ```bash
-   docker run --name postgres-crypto -e POSTGRES_DB=crypto_deposits -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres:17
-   ```
+**URL:** http://localhost:8000/redoc
 
-4. Copy environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your database URL and Alchemy API key
-   ```
+![Redoc Documentation](imgs/redoc.png)
 
-5. Run database migrations:
-   ```bash
-   alembic upgrade head
-   ```
+### Health Check
+http://localhost:8000/health
 
-6. Start the API server:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+## Testing
 
-7. Start the blockchain monitor (in another terminal):
-   ```bash
-   python run_monitor.py
-   ```
+### Using Swagger UI
 
-## API Endpoints
+1. Open http://localhost:8000/docs
+2. Create a user with `/users/`
+3. Add a wallet with `/wallets/`
+4. Connect via WebSocket at `/ws/?wallet_address=0x...`
+5. Send test ETH to monitored address
+6. Watch real-time updates
 
-### Users
-- `POST /users/` - Create a new user (requires email, first_name, last_name)
-- `GET /users/{user_id}` - Get user by ID
-- `GET /users/by-email/{email}` - Get user by email
-- `PUT /users/{user_id}` - Update an existing user (email, first_name, last_name are all optional)
+### Using curl
 
-### Wallets
-- `POST /wallets/` - Add a wallet to a user
-- `GET /wallets/user/{user_id}` - Get all wallets for a user
-- `GET /wallets/{wallet_id}` - Get wallet by ID
+```bash
+# Create user
+curl -X POST "http://localhost:8000/users/" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","first_name":"John","last_name":"Doe"}'
 
-### Deposits
-- `GET /deposits/wallet/{wallet_id}` - Get deposits for a wallet
-- `GET /deposits/{deposit_id}` - Get deposit by ID
-- `GET /deposits/tx/{tx_hash}` - Get deposit by transaction hash
+# Add wallet
+curl -X POST "http://localhost:8000/wallets/" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"...","address":"0x1cA0881E0b17f28a9D1eB9AC2b4A2824d665715a","blockchain_network_id":"..."}'
+```
 
-### WebSocket
-- `WS /ws?wallet_address=0x...` - Connect to real-time updates for a wallet
+### Optional Web UI
+
+A web interface is available at http://localhost:8000 for testing (see `EXTRA_TASK_WITH_FRONTEND.md`). This is not part of the technical assessment - it's a simple way to test functionality without writing API calls.
+
+![Web UI](imgs/Extra-Front-End%20UI.png)
+
+## Database Schema
+
+- **users** - User accounts (id, email, first_name, last_name, created_at)
+- **wallets** - Wallet addresses per user (id, user_id, address, blockchain_network_id, label)
+- **deposits** - Transaction records (id, wallet_id, tx_hash, amount, confirmations, status, block_number, created_at)
+- **blockchain_networks** - Network configurations (id, name, chain_id, rpc_url, confirmations_required)
 
 ## WebSocket Events
 
-The WebSocket connection sends real-time updates in JSON format:
-
 ```json
 {
-  "type": "deposit_detected",
+  "type": "deposit_update",
+  "wallet_address": "0x...",
   "data": {
     "tx_hash": "0x...",
     "amount": "1.5",
-    "confirmations": 0,
-    "status": "pending"
+    "confirmations": 3,
+    "status": "processing"
   }
 }
 ```
 
-Event types:
-- `deposit_detected` - New deposit found
-- `confirmation_update` - Confirmation count increased
-- `deposit_completed` - Deposit fully confirmed
-- `deposit_orphaned` - Transaction removed due to blockchain reorg
+Event types: `deposit_update`, `confirmation_update`, `deposit_completed`, `deposit_orphaned`
 
-## Testing the System
+## Design Decisions
 
-1. Create a user with first name, last name, and email, then add a wallet address
-2. Get some Sepolia test ETH from a faucet (e.g., [sepoliafaucet.com](https://sepoliafaucet.com))
-3. Send ETH to your monitored wallet address
-4. Connect to the WebSocket endpoint to see real-time updates
-5. Check the API endpoints to see deposit history
+**Separate Processes** - API and Monitor run independently for scalability and fault tolerance
 
-## Environment Variables
+**HTTP Communication** - Monitor notifies API via HTTP POST (simple, reliable, no extra dependencies)
 
-See `.env.example` for all required environment variables.
+**Address Normalization** - All addresses stored lowercase to handle Ethereum's case-insensitive addresses
 
-## Database Schema
+**Async/Await Throughout** - Non-blocking I/O for handling many concurrent WebSocket connections
 
-The system uses PostgreSQL with the following main tables:
-- `users` - User accounts
-- `wallets` - Wallet addresses (multiple per user)
-- `deposits` - Transaction records with status tracking
-- `blockchain_networks` - Supported blockchain configurations
+**UUID Primary Keys** - Globally unique IDs that work in distributed setups without coordination
 
-## Security Notes
+**Confirmation Updates Every 15 Seconds** - Balances accuracy with database load (blocks arrive every ~12 seconds)
 
-- Authentication is simplified for this technical demo
-- In production, implement JWT authentication
-- Wallet addresses are validated for proper format
-- All amounts use precise decimal arithmetic
+## Deliverables
 
-## User Management
+✅ Complete Python implementation - All source code in `/app` directory  
+✅ Blockchain monitoring logic - Real-time monitoring via WebSocket subscription  
+✅ Real-time WebSocket system - Connection management and broadcasting  
+✅ Database models and persistence - SQLAlchemy ORM with Alembic migrations  
+✅ Database schema design - Proper normalization with foreign keys  
+✅ Setup & run instructions - This file plus helper scripts  
+✅ Design explanation - Architecture and decisions covered above  
 
-### Creating a User
-```json
-POST /users/
-{
-  "email": "user@example.com",
-  "first_name": "John",
-  "last_name": "Doe"
-}
-```
+## More Documentation
 
-### Updating a User
-```json
-PUT /users/{user_id}
-{
-  "email": "newemail@example.com",
-  "first_name": "Jane",
-  "last_name": "Smith"
-}
-```
+- **EXTRA_TASK_WITH_FRONTEND.md** - Optional web UI documentation
 
-All fields in the update request are optional. You can update just the email, just the name fields, or all of them.
+## Tech Stack
 
-## Architecture Decisions
-
-### Blockchain Monitoring
-- Uses Alchemy WebSocket API for real-time block notifications
-- Implements `eth_newBlockHeaders` subscription for new blocks
-- Uses `eth_getTransactionReceipt` for transaction verification
-- Tracks block hashes to detect blockchain reorganizations
-
-### Real-Time Updates
-- WebSocket connections authenticated by wallet address
-- Connection manager handles multiple concurrent users
-- Graceful handling of connection drops and reconnections
-
-### Database Design
-- UUIDs for all primary keys (better for distributed systems)
-- Separate wallets table for multi-wallet support
-- Configurable confirmation requirements per network
-- Comprehensive indexing for fast lookups
-
-## Contributing
-
-This is a technical assessment project. The codebase demonstrates:
-- Clean, modular architecture
-- Real-time system design
-- Blockchain integration best practices
-- Production-ready error handling
-- Comprehensive documentation
+- **FastAPI** - REST API and WebSocket server
+- **PostgreSQL** - Database via SQLAlchemy ORM
+- **Alchemy** - Ethereum blockchain connectivity
+- **Alembic** - Database migrations

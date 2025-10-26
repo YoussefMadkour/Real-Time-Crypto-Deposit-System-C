@@ -58,6 +58,7 @@ class BlockchainNetwork(Base):
     rpc_url = Column(String, nullable=False)
     ws_url = Column(String, nullable=False)
     confirmations_required = Column(Integer, nullable=False, default=12)
+    block_time = Column(Integer, nullable=False, default=12)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -114,7 +115,10 @@ class Deposit(Base):
     )  # High precision for crypto amounts
     confirmations = Column(Integer, nullable=False, default=0)
     status = Column(
-        Enum(DepositStatus), nullable=False, default=DepositStatus.PENDING, index=True
+        Enum(DepositStatus, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=DepositStatus.PENDING,
+        index=True,
     )
     blockchain_network_id = Column(
         UUID(as_uuid=True), ForeignKey("blockchain_networks.id"), nullable=False

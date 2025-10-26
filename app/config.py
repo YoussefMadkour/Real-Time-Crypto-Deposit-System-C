@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     debug: bool = True
     host: str = "0.0.0.0"
     port: int = 8000
+    api_base_url: str = "http://localhost:8000"
     
     # WebSocket Configuration
     websocket_ping_interval: int = 20

@@ -27,6 +27,10 @@ logging.basicConfig(
     ]
 )
 
+# Reduce SQLAlchemy logging noise
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.pool').setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 

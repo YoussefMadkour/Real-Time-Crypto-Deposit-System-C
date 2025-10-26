@@ -6,6 +6,17 @@ from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
+# Global singleton instance
+_websocket_manager_instance = None
+
+
+def get_websocket_manager() -> 'WebSocketManager':
+    """Get or create the global WebSocketManager instance."""
+    global _websocket_manager_instance
+    if _websocket_manager_instance is None:
+        _websocket_manager_instance = WebSocketManager()
+    return _websocket_manager_instance
+
 
 class WebSocketManager:
     """Manages WebSocket connections for real-time updates."""
@@ -20,7 +31,6 @@ class WebSocketManager:
         """Register a new WebSocket connection for a wallet."""
         self.active_connections[wallet_address].add(websocket)
         self.connection_wallets[websocket] = wallet_address
-        logger.info(f"Connected WebSocket for wallet {wallet_address}")
     
     async def disconnect(self, websocket: WebSocket, wallet_address: str = None):
         """Unregister a WebSocket connection."""
@@ -34,8 +44,6 @@ class WebSocketManager:
             # Clean up empty sets
             if not self.active_connections[wallet_address]:
                 del self.active_connections[wallet_address]
-        
-        logger.info(f"Disconnected WebSocket for wallet {wallet_address}")
     
     async def send_to_wallet(self, wallet_address: str, message: dict):
         """Send a message to all connections monitoring a specific wallet."""

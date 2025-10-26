@@ -10,6 +10,7 @@ class BlockchainNetworkBase(BaseModel):
     rpc_url: str
     ws_url: str
     confirmations_required: int = 12
+    block_time: int = 12  # Block time in seconds
     is_active: bool = True
 
 

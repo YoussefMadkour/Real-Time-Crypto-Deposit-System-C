@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Deposit Monitor</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Crypto Deposit Monitor</h1>
+            <p class="subtitle">Real-time Ethereum Sepolia deposit tracking</p>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-label">API Status:</span>
+                <span id="apiStatus" class="status-value status-unknown">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">WebSocket:</span>
+                <span id="wsStatus" class="status-value status-disconnected">Disconnected</span>
+            </div>
+        </div>
+
+        <!-- User Management Section -->
+        <section class="card">
+            <h2>👤 User Management</h2>
+
+            <div class="form-group">
+                <h3>Create New User</h3>
+                <form id="createUserForm">
+                    <div class="input-row">
+                        <input type="email" id="userEmail" placeholder="Email" required>
+                        <input type="text" id="userFirstName" placeholder="First Name" required>
+                        <input type="text" id="userLastName" placeholder="Last Name" required>
+                        <button type="submit" class="btn btn-primary">Create User</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="form-group">
+                <h3>Search User by Email</h3>
+                <div class="input-row">
+                    <input type="email" id="searchEmail" placeholder="Enter email to search">
+                    <button onclick="searchUserByEmail()" class="btn btn-secondary">Search</button>
+                </div>
+            </div>
+
+            <div id="currentUser" class="user-info" style="display: none;">
+                <h3>Current User</h3>
+                <div class="user-details">
+                    <p><strong>ID:</strong> <span id="currentUserId"></span></p>
+                    <p><strong>Name:</strong> <span id="currentUserName"></span></p>
+                    <p><strong>Email:</strong> <span id="currentUserEmail"></span></p>
+                    <button onclick="showUpdateUserForm()" class="btn btn-small">Update User</button>
+                </div>
+
+                <div id="updateUserForm" style="display: none; margin-top: 1rem;">
+                    <h4>Update User Information</h4>
+                    <form id="updateForm">
+                        <div class="input-row">
+                            <input type="email" id="updateEmail" placeholder="New Email (optional)">
+                            <input type="text" id="updateFirstName" placeholder="New First Name (optional)">
+                            <input type="text" id="updateLastName" placeholder="New Last Name (optional)">
+                            <button type="submit" class="btn btn-primary">Update</button>
+                            <button type="button" onclick="hideUpdateUserForm()" class="btn btn-secondary">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Wallet Management Section -->
+        <section class="card">
+            <h2>👛 Wallet Management</h2>
+
+            <div class="form-group">
+                <h3>Add Wallet Address</h3>
+                <form id="addWalletForm">
+                    <div class="input-row">
+                        <input type="text" id="walletAddress" placeholder="0x..." required pattern="^0x[a-fA-F0-9]{40}$">
+                        <input type="text" id="walletLabel" placeholder="Wallet Label (optional)">
+                        <button type="submit" class="btn btn-primary" disabled id="addWalletBtn">Add Wallet</button>
+                    </div>
+                    <small class="help-text">Note: You must have a user selected first</small>
+                </form>
+            </div>
+
+            <div id="walletsList" class="wallets-container" style="display: none;">
+                <h3>User Wallets</h3>
+                <div id="walletsContent"></div>
+            </div>
+        </section>
+
+        <!-- Deposit Monitoring Section -->
+        <section class="card">
+            <h2>📊 Deposit Monitor</h2>
+
+            <div id="monitoringControls" style="display: none;">
+                <div class="input-row">
+                    <select id="walletSelect">
+                        <option value="">Select a wallet to monitor</option>
+                    </select>
+                    <button onclick="startMonitoring()" class="btn btn-success" id="startMonitorBtn">Start Monitoring</button>
+                    <button onclick="stopMonitoring()" class="btn btn-danger" id="stopMonitorBtn" style="display: none;">Stop Monitoring</button>
+                </div>
+            </div>
+
+            <div id="noWalletMessage" class="info-message">
+                <p>ℹ️ Add a wallet address above to start monitoring deposits</p>
+            </div>
+
+            <div id="monitoringActive" style="display: none;">
+                <div class="monitoring-header">
+                    <h3>Monitoring: <span id="monitoredAddress"></span></h3>
+                    <button onclick="refreshDeposits()" class="btn btn-small">🔄 Refresh</button>
+                </div>
+
+                <div id="liveUpdates" class="live-updates">
+                    <h4>Live Updates</h4>
+                    <div id="liveUpdatesList" class="updates-list"></div>
+                </div>
+
+                <div id="depositHistory" class="deposit-history">
+                    <h4>Deposit History</h4>
+                    <div id="depositsList" class="deposits-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Blockchain Networks Section -->
+        <section class="card">
+            <h2>⛓️ Supported Networks</h2>
+            <div id="networksList" class="networks-list"></div>
+        </section>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
